@@ -10,3 +10,11 @@ Artifacts:
 - results/robustness/zero_shot_test_text_dropout.csv
 - results/robustness/zero_shot_text_dropout_recall.png
 - results/robustness/zero_shot_text_dropout_medr.png
+
+## Zero-shot CLIP (Text → Image) under word shuffle (Flickr8k test)
+
+Shuffling word order reduces performance but less severely than word dropout:
+Recall@1 decreases to 0.3661 and MedR increases to 3, suggesting CLIP relies more on lexical content than strict word order
+for this dataset.
+Artifacts:
+- results/robustness/zero_shot_test_text_shuffle.csv
