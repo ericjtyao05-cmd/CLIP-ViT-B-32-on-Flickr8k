@@ -68,8 +68,8 @@ class Flickr8kDataset(Dataset):
         # captions.txt lines: image_name \t caption
         self.samples: List[Tuple[str, str, int]] = []
 
-        # caption counter per image to assign caption_idx deterministically
         cap_counter: Dict[str, int] = {}
+        missing_files = 0
 
         for ln in self.captions_path.read_text(encoding="utf-8", errors="ignore").splitlines():
             if not ln.strip():
@@ -78,10 +78,23 @@ class Flickr8kDataset(Dataset):
             if len(parts) != 2:
                 continue
 
-            img_name = parts[0].strip()
+            raw_img_name = parts[0].strip()
             caption = parts[1].strip()
 
+            # Only keep images in this split
+            # (split files should contain canonical names like xxx.jpg)
+            # Normalize caption-side variants:
+            #   xxx.jpg.1 / xxx.jpg.2 / xxx.jpg#0 / xxx.jpg#1  -> xxx.jpg
+            img_name = raw_img_name.split("#")[0]
+            if ".jpg" in img_name:
+                img_name = img_name.split(".jpg")[0] + ".jpg"
+
             if img_name not in self.split_images_set:
+                continue
+
+            # Filter missing images early (prevents training-time FileNotFoundError)
+            if not (self.images_dir / img_name).exists():
+                missing_files += 1
                 continue
 
             cap_counter.setdefault(img_name, 0)
@@ -90,11 +103,15 @@ class Flickr8kDataset(Dataset):
 
             self.samples.append((img_name, caption, cap_idx))
 
+        if missing_files > 0:
+            print(f"[Flickr8kDataset] filtered missing image files: {missing_files}")
+
         if len(self.samples) == 0:
             raise RuntimeError(
                 f"No samples found for split='{split}'. "
                 f"Check captions.txt and splits/{split}.txt alignment."
             )
+
 
     def __len__(self) -> int:
         return len(self.samples)
