@@ -16,3 +16,4 @@ results/
 embeddings/
 .idea/
 .DS_Store
+checkpoints/
